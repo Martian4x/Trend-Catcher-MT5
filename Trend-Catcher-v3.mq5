@@ -1,5 +1,5 @@
 //+------------------------------------------------------------------+
-//|                                                 Trend-Catcher v2 |
+//|                                                 Trend-Catcher v3 |
 //|                                                        Martian4x |
 //|                                         http://www.martian4x.com |
 //+------------------------------------------------------------------+
@@ -105,7 +105,7 @@ input ENUM_APPLIED_PRICE RSIPrice = PRICE_MEDIAN;
 sinput string ADXset;
 input bool UseADX = true;
 input int ADXPeriod = 14;
-input int ADXLevelLine = 20;
+input int ADXLevelLine = 25;
 
 sinput string TI; 	// Timer
 input bool UseTimer = false;
@@ -218,7 +218,7 @@ void OnTick()
 		// 	LastSignal = "Sell";
 		// }
       ADXSignal = "";
-		if((ADX.Main(barShift+1) < ADXLevelLine && ADX.Main(barShift) > ADXLevelLine && UseADX == true) || UseADX == false){
+		if((ADX.Main(barShift) > ADXLevelLine && UseADX == true) || UseADX == false){
 			ADXSignal = "Buy";
 		}
 		
@@ -248,14 +248,18 @@ void OnTick()
 			} else {
 				Print("The ",_Symbol, " order did not placed or selected");
 			}
-		}
+		} // Position resume that was stopped with a stoploss
+      // 1. Stopped by a stoploss not profit or trailling stop
+      // 2. No Position currently open
+      // 3. Moving Average and RSI are showing the same trend
+      // 4. Price is beyond low/high of the stopped order
 
       
       if((SymbolInfoDouble(_Symbol,SYMBOL_BID)<TrendMA.Main() && UseTrendMA==true)||UseTrendMA == false){
          TrendMASignal = "Sell";
       }
 
-      if((ADX.Main(barShift+1) > ADXLevelLine && ADX.Main(barShift) < ADXLevelLine && UseADX == true) || UseADX == false){
+      if((ADX.Main(barShift) < ADXLevelLine && UseADX == true) || UseADX == false){
 			ADXSignal = "Sell";
 		}
 
@@ -292,7 +296,6 @@ void OnTick()
 		}
 		
 	} // Order placement end
-	
 	
 	// Break even
 	if(UseBreakEven == true && PositionType(_Symbol) != -1)
