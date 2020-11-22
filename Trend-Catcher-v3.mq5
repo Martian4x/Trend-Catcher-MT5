@@ -51,6 +51,7 @@ CiADX ADX;
 //| Input variables                                                  |
 //+------------------------------------------------------------------+
 input int EXPERT_MAGIC = 3000;
+input int INPUT_SET = NULL;
 input ulong Slippage = 3;
 input bool TradeOnNewBar = true;
 
@@ -133,6 +134,16 @@ string PositionSignal = "";
 
 int OnInit()
 {
+   // Check if Automated Trade is allowed
+   // Check if the Input Set Number is set
+   if(INPUT_SET==NULL){
+      Alert("The Input Set Number is not set");
+      return false;
+   }
+   
+    string EAInfo = "Name: "+MQLInfoString(MQL_PROGRAM_NAME)+", MagicNumber: "+EXPERT_MAGIC+", InputSet: "+INPUT_SET+", MQL_TRADE_ALLOWED: "+MQLInfoInteger(MQL_TRADE_ALLOWED)+", TERMINAL_TRADE_ALLOWED: "+TerminalInfoInteger(TERMINAL_TRADE_ALLOWED); 
+   //  string AccountInfo = "Type: "+AccountType+", Leverage: "+AccountLeverage()+", Broker: "+AccountInfoString(ACCOUNT_COMPANY)+", Server: "+AccountInfoString(ACCOUNT_SERVER)+", AccountName: "+AccountName(); 
+   // 
 	FastMA.Init(_Symbol,_Period,FastMAPeriod,FastMAShift,FastMAMethod,FastMAPrice);
 	SlowMA.Init(_Symbol,_Period,SlowMAPeriod,SlowMAShift,SlowMAMethod,SlowMAPrice);
 	TrendMA.Init(_Symbol,_Period,TrendMAPeriod,TrendMAShift,TrendMAMethod,TrendMAPrice);
@@ -218,7 +229,7 @@ void OnTick()
 		// 	LastSignal = "Sell";
 		// }
       ADXSignal = "";
-		if((ADX.Main(barShift) > ADXLevelLine && UseADX == true) || UseADX == false){
+		if((ADX.Main(barShift+1) < ADXLevelLine && ADX.Main(barShift) > ADXLevelLine && UseADX == true) || UseADX == false){
 			ADXSignal = "Buy";
 		}
 		
@@ -253,13 +264,12 @@ void OnTick()
       // 2. No Position currently open
       // 3. Moving Average and RSI are showing the same trend
       // 4. Price is beyond low/high of the stopped order
-
       
       if((SymbolInfoDouble(_Symbol,SYMBOL_BID)<TrendMA.Main() && UseTrendMA==true)||UseTrendMA == false){
          TrendMASignal = "Sell";
       }
 
-      if((ADX.Main(barShift) < ADXLevelLine && UseADX == true) || UseADX == false){
+      if((ADX.Main(barShift+1) < ADXLevelLine && ADX.Main(barShift) > ADXLevelLine && UseADX == true) || UseADX == false){
 			ADXSignal = "Sell";
 		}
 
@@ -314,7 +324,13 @@ void OnTick()
 	// 	MTrade.PositionClose(_Symbol);
 	// }
 
-	Comment("MATradeSignal : ", MASignal,"| RSILevelSignalType : ",RSILevelSignalType , "| RSITradeSignal : ", RSISignal);
+	// Comment("MATradeSignal : ", MASignal,"| RSILevelSignalType : ",RSILevelSignalType , "| RSITradeSignal : ", RSISignal);
+    // Chart Comment
+   //  string SettingsComment = "DynamicLotSize: "+DynamicLotSize+", EquityPercent: "+EquityPercent+", FixedLotSize: "+FixedLotSize+", StopLoss: "+StopLoss+", TakeProfit: "+TakeProfit; 
+   //  string Settings2Comment = "TrailingStop: "+TrailingStop+", MinimumProfit: "+MinimumProfit+", Slippage: "+Slippage+", AdjustPips: "+AdjustPips+", MagicNumber: "+MagicNumber; 
+   //  string IndicatorsComment = "FastMAPeriod: "+FastMAPeriod+", SlowMAPeriod: "+SlowMAPeriod+" RSIPeriod: "+RSIPeriod+", TrendMAPeriod: "+TrendMAPeriod; 
+    Comment(EAInfo);
+   //  Comment(EAInfo+"\n"+AccountInfo+"\n"+SettingsComment+"\n"+Settings2Comment+"\n"+IndicatorsComment+"\n"+StatusComment);
 
 
 }
