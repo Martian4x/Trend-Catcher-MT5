@@ -127,6 +127,7 @@ string TrendMASignal = "";
 string RSISignal = "";
 string ADXSignal = "";
 string PositionSignal = "";
+string EAInfo, AccountInfo, MoneyManagementInfo, SignalInfo, TradingInfo, FakeOutInfo, CurrentSignal, PositionInfo;
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -138,11 +139,29 @@ int OnInit()
    // Check if the Input Set Number is set
    if(INPUT_SET==NULL){
       Alert("The Input Set Number is not set");
-      return false;
+      return (0);
    }
+
+      ENUM_ACCOUNT_TRADE_MODE account_type=(ENUM_ACCOUNT_TRADE_MODE)AccountInfoInteger(ACCOUNT_TRADE_MODE);
+   string trade_mode; 
+   switch(account_type) 
+     { 
+      case  ACCOUNT_TRADE_MODE_DEMO: 
+         trade_mode="DEMO"; 
+         break; 
+      case  ACCOUNT_TRADE_MODE_CONTEST: 
+         trade_mode="CONTEST"; 
+         break; 
+      default: 
+         trade_mode="REAL"; 
+         break; 
+     } 
    
-    string EAInfo = "Name: "+MQLInfoString(MQL_PROGRAM_NAME)+", MagicNumber: "+EXPERT_MAGIC+", InputSet: "+INPUT_SET+", MQL_TRADE_ALLOWED: "+MQLInfoInteger(MQL_TRADE_ALLOWED)+", TERMINAL_TRADE_ALLOWED: "+TerminalInfoInteger(TERMINAL_TRADE_ALLOWED); 
-   //  string AccountInfo = "Type: "+AccountType+", Leverage: "+AccountLeverage()+", Broker: "+AccountInfoString(ACCOUNT_COMPANY)+", Server: "+AccountInfoString(ACCOUNT_SERVER)+", AccountName: "+AccountName(); 
+   EAInfo = "Name: "+MQLInfoString(MQL_PROGRAM_NAME)+", MagicNumber: "+EXPERT_MAGIC+", InputSet: "+INPUT_SET+", MQL_TRADE_ALLOWED: "+MQLInfoInteger(MQL_TRADE_ALLOWED); 
+   AccountInfo = "TradeMode: "+trade_mode+", Leverage: "+AccountInfoInteger(ACCOUNT_LEVERAGE)+", Broker: "+AccountInfoString(ACCOUNT_COMPANY)+", Server: "+AccountInfoString(ACCOUNT_SERVER)+", AccountName: "+AccountInfoString(ACCOUNT_NAME); 
+   MoneyManagementInfo = "RiskPercent: "+RiskPercent+", StopLoss: "+StopLoss+", TakeProfit: "+TakeProfit+", UseTrailingStop: "+UseTrailingStop+", TrailingStop: "+TrailingStop;
+   TradingInfo = "FastMAPeriod: "+FastMAPeriod+", SlowMAPeriod: "+SlowMAPeriod+", RSISignalType: "+(RSILEVELLIST)RSILevelSignalType +", RSIPeriod: "+RSIPeriod+", Slippage: "+Slippage+", TradeOnNewBar: "+TradeOnNewBar;
+   FakeOutInfo = "UseTrendMA: "+UseTrendMA+", TrendMAPeriod: "+TrendMAPeriod+", UseADX: "+UseADX+", ADXPeriod: "+ADXPeriod+", ADXLevelLine: "+ADXLevelLine;
    // 
 	FastMA.Init(_Symbol,_Period,FastMAPeriod,FastMAShift,FastMAMethod,FastMAPrice);
 	SlowMA.Init(_Symbol,_Period,SlowMAPeriod,SlowMAShift,SlowMAMethod,SlowMAPrice);
@@ -324,13 +343,11 @@ void OnTick()
 	// 	MTrade.PositionClose(_Symbol);
 	// }
 
-	// Comment("MATradeSignal : ", MASignal,"| RSILevelSignalType : ",RSILevelSignalType , "| RSITradeSignal : ", RSISignal);
-    // Chart Comment
-   //  string SettingsComment = "DynamicLotSize: "+DynamicLotSize+", EquityPercent: "+EquityPercent+", FixedLotSize: "+FixedLotSize+", StopLoss: "+StopLoss+", TakeProfit: "+TakeProfit; 
-   //  string Settings2Comment = "TrailingStop: "+TrailingStop+", MinimumProfit: "+MinimumProfit+", Slippage: "+Slippage+", AdjustPips: "+AdjustPips+", MagicNumber: "+MagicNumber; 
-   //  string IndicatorsComment = "FastMAPeriod: "+FastMAPeriod+", SlowMAPeriod: "+SlowMAPeriod+" RSIPeriod: "+RSIPeriod+", TrendMAPeriod: "+TrendMAPeriod; 
-    Comment(EAInfo);
-   //  Comment(EAInfo+"\n"+AccountInfo+"\n"+SettingsComment+"\n"+Settings2Comment+"\n"+IndicatorsComment+"\n"+StatusComment);
+	// Comment("MATradeSignal : ", FastMA.Main(barShift+1),"| RSILevelSignalType : ",RSI.Main(barShift) , "| RSITradeSignal : ", RSISignal);
+    // Chart Comment 
+   CurrentSignal = "MASignal: "+MASignal+", RSISignal: "+RSISignal+", TrendMASignal: "+TrendMASignal+", ADXSignal: "+ADXSignal; 
+   PositionInfo = "BuyPlaced: "+glBuyPlaced+", SellPlaced: "+glSellPlaced; 
+   Comment(EAInfo+"\n"+AccountInfo+"\n"+MoneyManagementInfo+"\n"+TradingInfo+"\n"+FakeOutInfo+"\n"+CurrentSignal+"\n"+PositionInfo); 
 
 
 }
