@@ -61,7 +61,7 @@ input double RiskPercent = 2;
 input double FixedVolume = 0.1;
 
 sinput string SL; 	// Stop Loss & Take Profit
-input int StopLoss = 500;
+input int StopLoss = 100;
 input int TakeProfit = 1000;
 
 sinput string TS;		// Trailing Stop
@@ -104,7 +104,7 @@ input int RSIPeriod = 10;
 input ENUM_APPLIED_PRICE RSIPrice = PRICE_MEDIAN;
 
 sinput string ADXset;
-input bool UseADX = true;
+input bool UseADX = false;
 input int ADXPeriod = 14;
 input int ADXLevelLine = 25;
 
@@ -145,23 +145,24 @@ int OnInit()
       ENUM_ACCOUNT_TRADE_MODE account_type=(ENUM_ACCOUNT_TRADE_MODE)AccountInfoInteger(ACCOUNT_TRADE_MODE);
    string trade_mode; 
    switch(account_type) 
-     { 
-      case  ACCOUNT_TRADE_MODE_DEMO: 
-         trade_mode="DEMO"; 
-         break; 
-      case  ACCOUNT_TRADE_MODE_CONTEST: 
-         trade_mode="CONTEST"; 
-         break; 
-      default: 
-         trade_mode="REAL"; 
-         break; 
-     } 
+	{ 
+	case  ACCOUNT_TRADE_MODE_DEMO: 
+		trade_mode="DEMO"; 
+		break; 
+	case  ACCOUNT_TRADE_MODE_CONTEST: 
+		trade_mode="CONTEST"; 
+		break; 
+	default: 
+		trade_mode="REAL"; 
+		break; 
+	} 
    
    EAInfo = "Name: "+MQLInfoString(MQL_PROGRAM_NAME)+", MagicNumber: "+EXPERT_MAGIC+", InputSet: "+INPUT_SET+", MQL_TRADE_ALLOWED: "+MQLInfoInteger(MQL_TRADE_ALLOWED); 
    AccountInfo = "TradeMode: "+trade_mode+", Leverage: "+AccountInfoInteger(ACCOUNT_LEVERAGE)+", Broker: "+AccountInfoString(ACCOUNT_COMPANY)+", Server: "+AccountInfoString(ACCOUNT_SERVER)+", AccountName: "+AccountInfoString(ACCOUNT_NAME); 
    MoneyManagementInfo = "RiskPercent: "+RiskPercent+", StopLoss: "+StopLoss+", TakeProfit: "+TakeProfit+", UseTrailingStop: "+UseTrailingStop+", TrailingStop: "+TrailingStop;
    TradingInfo = "FastMAPeriod: "+FastMAPeriod+", SlowMAPeriod: "+SlowMAPeriod+", RSISignalType: "+(RSILEVELLIST)RSILevelSignalType +", RSIPeriod: "+RSIPeriod+", Slippage: "+Slippage+", TradeOnNewBar: "+TradeOnNewBar;
    FakeOutInfo = "UseTrendMA: "+UseTrendMA+", TrendMAPeriod: "+TrendMAPeriod+", UseADX: "+UseADX+", ADXPeriod: "+ADXPeriod+", ADXLevelLine: "+ADXLevelLine;
+
    // 
 	FastMA.Init(_Symbol,_Period,FastMAPeriod,FastMAShift,FastMAMethod,FastMAPrice);
 	SlowMA.Init(_Symbol,_Period,SlowMAPeriod,SlowMAShift,SlowMAMethod,SlowMAPrice);
@@ -344,7 +345,7 @@ void OnTick()
 	// }
 
 	// Comment("MATradeSignal : ", FastMA.Main(barShift+1),"| RSILevelSignalType : ",RSI.Main(barShift) , "| RSITradeSignal : ", RSISignal);
-    // Chart Comment 
+   // Chart Comment 
    CurrentSignal = "MASignal: "+MASignal+", RSISignal: "+RSISignal+", TrendMASignal: "+TrendMASignal+", ADXSignal: "+ADXSignal; 
    PositionInfo = "BuyPlaced: "+glBuyPlaced+", SellPlaced: "+glSellPlaced; 
    Comment(EAInfo+"\n"+AccountInfo+"\n"+MoneyManagementInfo+"\n"+TradingInfo+"\n"+FakeOutInfo+"\n"+CurrentSignal+"\n"+PositionInfo); 

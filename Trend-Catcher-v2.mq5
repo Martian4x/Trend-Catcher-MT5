@@ -50,6 +50,7 @@ CiRSI RSI;
 //| Input variables                                                  |
 //+------------------------------------------------------------------+
 input int EXPERT_MAGIC = 2000;
+input int INPUT_SET = NULL;
 input ulong Slippage = 3;
 input bool TradeOnNewBar = true;
 
@@ -86,6 +87,7 @@ input int SlowMAShift = 0;
 input ENUM_APPLIED_PRICE SlowMAPrice = PRICE_CLOSE;
 
 sinput string TrMA; // TrendMA
+input bool UseTrendMA = true;
 input int TrendMAPeriod = 50;
 input ENUM_MA_METHOD TrendMAMethod = 0;
 input int TrendMAShift = 0;
@@ -119,6 +121,7 @@ string MASignal = "";
 string TrendMASignal = "";
 string RSISignal = "";
 string PositionSignal = "";
+string EAInfo, AccountInfo, MoneyManagementInfo, SignalInfo, TradingInfo, FakeOutInfo, CurrentSignal, PositionInfo;
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -126,6 +129,35 @@ string PositionSignal = "";
 
 int OnInit()
 {
+   // Check if Automated Trade is allowed
+   // Check if the Input Set Number is set
+   if(INPUT_SET==NULL){
+      Alert("The Input Set Number is not set");
+      return (0);
+   }
+
+      ENUM_ACCOUNT_TRADE_MODE account_type=(ENUM_ACCOUNT_TRADE_MODE)AccountInfoInteger(ACCOUNT_TRADE_MODE);
+   string trade_mode; 
+   switch(account_type) 
+     { 
+      case  ACCOUNT_TRADE_MODE_DEMO: 
+         trade_mode="DEMO"; 
+         break; 
+      case  ACCOUNT_TRADE_MODE_CONTEST: 
+         trade_mode="CONTEST"; 
+         break; 
+      default: 
+         trade_mode="REAL"; 
+         break; 
+     } 
+   
+   EAInfo = "Name: "+MQLInfoString(MQL_PROGRAM_NAME)+", MagicNumber: "+EXPERT_MAGIC+", InputSet: "+INPUT_SET+", MQL_TRADE_ALLOWED: "+MQLInfoInteger(MQL_TRADE_ALLOWED); 
+   AccountInfo = "TradeMode: "+trade_mode+", Leverage: "+AccountInfoInteger(ACCOUNT_LEVERAGE)+", Broker: "+AccountInfoString(ACCOUNT_COMPANY)+", Server: "+AccountInfoString(ACCOUNT_SERVER)+", AccountName: "+AccountInfoString(ACCOUNT_NAME); 
+   MoneyManagementInfo = "RiskPercent: "+RiskPercent+", StopLoss: "+StopLoss+", TakeProfit: "+TakeProfit+", UseTrailingStop: "+UseTrailingStop+", TrailingStop: "+TrailingStop;
+   TradingInfo = "FastMAPeriod: "+FastMAPeriod+", SlowMAPeriod: "+SlowMAPeriod+", RSISignalType: "+(RSILEVELLIST)RSILevelSignalType +", RSIPeriod: "+RSIPeriod+", Slippage: "+Slippage+", TradeOnNewBar: "+TradeOnNewBar;
+   FakeOutInfo = "UseTrendMA: "+UseTrendMA+", TrendMAPeriod: "+TrendMAPeriod;
+	
+	// Indicators Initilization
 	FastMA.Init(_Symbol, _Period, FastMAPeriod, FastMAShift, FastMAMethod, FastMAPrice);
 	SlowMA.Init(_Symbol, _Period, SlowMAPeriod, SlowMAShift, SlowMAMethod, SlowMAPrice);
 	TrendMA.Init(_Symbol, _Period, TrendMAPeriod, TrendMAShift, TrendMAMethod, TrendMAPrice);
@@ -320,5 +352,8 @@ void OnTick()
 	// 	MTrade.PositionClose(_Symbol);
 	// }
 
-	Comment("MATradeSignal : ", MASignal, "| RSILevelSignalType : ", RSILevelSignalType, "| RSITradeSignal : ", RSISignal);
+    // Chart Comment 
+   CurrentSignal = "MASignal: "+MASignal+", RSISignal: "+RSISignal+", TrendMASignal: "+TrendMASignal; 
+   PositionInfo = "BuyPlaced: "+glBuyPlaced+", SellPlaced: "+glSellPlaced; 
+   Comment(EAInfo+"\n"+AccountInfo+"\n"+MoneyManagementInfo+"\n"+TradingInfo+"\n"+FakeOutInfo+"\n"+CurrentSignal+"\n"+PositionInfo); 
 }
