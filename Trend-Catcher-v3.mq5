@@ -181,7 +181,6 @@ int OnInit()
 
 void OnTick()
 {
-
 	// Check for new bar
 	bool newBar = true;
 	int barShift = 0;
