@@ -43,20 +43,20 @@ CiMA FastMA;
 CiMA SlowMA;
 CiMA TrendMA;
 CiRSI RSI;
-CiADX ADX;
+CiAroon Aroon;
 
 //+------------------------------------------------------------------+
 //| Input variables                                                  |
 //+------------------------------------------------------------------+
 input int EXPERT_MAGIC = 14000;
-input int INPUT_SET = NULL;
+input int INPUT_SET = 6848648;
 input ulong Slippage = 3;
-input bool TradeOnNewBar = true;
+input bool TradeOnNewBar = false;
 
 sinput string MM; // Money Management
-input bool UseMoneyManagement = true;
+input bool UseMoneyManagement = false;
 input double RiskPercent = 2;
-input double FixedVolume = 0.1;
+input double FixedVolume = 0.3;
 
 sinput string SL; // Stop Loss & Take Profit
 input int StopLoss = 100;
@@ -99,11 +99,12 @@ input int RSIPeriod = 10;
 input ENUM_APPLIED_PRICE RSIPrice = PRICE_MEDIAN;
 input bool RSISignalClear = false;
 
-input bool CloseTradeOnSignalInverse = false;
-sinput string ADXset;
-input bool UseADX = false;
-input int ADXPeriod = 14;
-input int ADXLevelLine = 25;
+input bool CloseTradeOnSignalInverse = true;
+
+sinput string AroonSet;
+input bool UseAroon = true;
+input int AroonPeriod = 14;
+// input int ADXLevelLine = 25;
 
 sinput string BE; // Break Even
 input bool UseBreakEven = false;
@@ -126,7 +127,7 @@ int glPositionTicket = 0;
 string MASignal = "";
 string TrendMASignal = "";
 string RSISignal = "";
-string ADXSignal = "";
+string AroonSignal = "";
 string PositionSignal = "";
 string EAInfo, AccountInfo, MoneyManagementInfo, SignalInfo, TradingInfo, FakeOutInfo, CurrentSignal, PositionInfo;
 
@@ -148,29 +149,29 @@ int OnInit()
    string trade_mode;
    switch (account_type)
    {
-   case ACCOUNT_TRADE_MODE_DEMO:
-      trade_mode = "DEMO";
-      break;
-   case ACCOUNT_TRADE_MODE_CONTEST:
-      trade_mode = "CONTEST";
-      break;
-   default:
-      trade_mode = "REAL";
-      break;
+      case ACCOUNT_TRADE_MODE_DEMO:
+         trade_mode = "DEMO";
+         break;
+      case ACCOUNT_TRADE_MODE_CONTEST:
+         trade_mode = "CONTEST";
+         break;
+      default:
+         trade_mode = "REAL";
+         break;
    }
 
    EAInfo = "Name: " + MQLInfoString(MQL_PROGRAM_NAME) + ", MagicNumber: " + EXPERT_MAGIC + ", InputSet: " + INPUT_SET + ", MQL_TRADE_ALLOWED: " + MQLInfoInteger(MQL_TRADE_ALLOWED);
    AccountInfo = "TradeMode: " + trade_mode + ", Leverage: " + AccountInfoInteger(ACCOUNT_LEVERAGE) + ", Broker: " + AccountInfoString(ACCOUNT_COMPANY) + ", Server: " + AccountInfoString(ACCOUNT_SERVER) + ", AccountName: " + AccountInfoString(ACCOUNT_NAME);
    MoneyManagementInfo = "RiskPercent: " + RiskPercent + ", StopLoss: " + StopLoss + ", TakeProfit: " + TakeProfit + ", UseTrailingStop: " + UseTrailingStop + ", TrailingStop: " + TrailingStop;
    TradingInfo = "FastMAPeriod: " + FastMAPeriod + ", SlowMAPeriod: " + SlowMAPeriod + ", RSISignalType: " + (RSILEVELLIST)RSILevelSignalType + ", RSIPeriod: " + RSIPeriod + ", Slippage: " + Slippage + ", CloseTradeOnSignalInverse: " + CloseTradeOnSignalInverse;
-   FakeOutInfo = "UseTrendMA: " + UseTrendMA + ", TrendMAPeriod: " + TrendMAPeriod + ", UseADX: " + UseADX + ", ADXPeriod: " + ADXPeriod + ", ADXLevelLine: " + ADXLevelLine;
+   FakeOutInfo = "UseTrendMA: " + UseTrendMA + ", TrendMAPeriod: " + TrendMAPeriod + ", UseAroon: " + UseAroon + ", AroonPeriod: " + AroonPeriod;
 
    //
    FastMA.Init(_Symbol, _Period, FastMAPeriod, FastMAShift, FastMAMethod, FastMAPrice);
    SlowMA.Init(_Symbol, _Period, SlowMAPeriod, SlowMAShift, SlowMAMethod, SlowMAPrice);
    TrendMA.Init(_Symbol, _Period, TrendMAPeriod, TrendMAShift, TrendMAMethod, TrendMAPrice);
    RSI.Init(_Symbol, _Period, RSIPeriod, RSIPrice);
-   ADX.Init(_Symbol, _Period, ADXPeriod);
+   Aroon.Init(_Symbol, PERIOD_H1, AroonPeriod);
 
    Trade.SetDeviationInPoints(Slippage);
    Trade.SetExpertMagicNumber(EXPERT_MAGIC);
@@ -265,14 +266,15 @@ void OnTick()
       // }elseif(PositionType() != POSITION_TYPE_SELL){
       // 	LastSignal = "Sell";
       // }
-      ADXSignal = "";
-      if ((ADX.Main(barShift + 1) < ADXLevelLine && ADX.Main(barShift) > ADXLevelLine && UseADX == true) || UseADX == false)
+      AroonSignal = "";
+      if (Aroon.BullsAroonBuffer(barShift + 1) < Aroon.BearsAroonBuffer(barShift + 1) && Aroon.BullsAroonBuffer(barShift) > Aroon.BearsAroonBuffer(barShift) && Aroon.BullsAroonBuffer(barShift) > 80)
       {
-         ADXSignal = "Buy";
+         AroonSignal = "Buy";
       }
 
       // Open buy order
-      if (glBuyPlaced == false && MASignal == "Buy" && RSISignal == "Buy" && TrendMASignal == "Buy" && ADXSignal == "Buy")
+      // if (glBuyPlaced == false && MASignal == "Buy" == "Buy" && AroonSignal == "Buy")
+      if (glBuyPlaced == false && TrendMASignal == "Buy" && RSISignal=="Buy" && AroonSignal == "Buy")
       {
          // Close EA Sell Order
          // if (PositionType() == POSITION_TYPE_SELL)
@@ -281,8 +283,8 @@ void OnTick()
             MTrade.PositionClose(_Symbol);
             glSellPlaced = false;
          }
-         Print("PositionType: ",PositionGetInteger(POSITION_TYPE));
-         Print("POSITION_TYPE_SELL: ",POSITION_TYPE_SELL);
+         // Print("PositionType: ",PositionGetInteger(POSITION_TYPE));
+         // Print("POSITION_TYPE_SELL: ",POSITION_TYPE_SELL);
 
          glBuyPlaced = MTrade.Buy(tradeSize);
          if(glBuyPlaced == true)
@@ -318,16 +320,18 @@ void OnTick()
          TrendMASignal = "Sell";
       }
 
-      if ((ADX.Main(barShift + 1) < ADXLevelLine && ADX.Main(barShift) > ADXLevelLine && UseADX == true) || UseADX == false)
+      if (Aroon.BullsAroonBuffer(barShift + 1) > Aroon.BearsAroonBuffer(barShift + 1) && Aroon.BullsAroonBuffer(barShift) < Aroon.BearsAroonBuffer(barShift) && Aroon.BearsAroonBuffer(barShift) > 80)
       {
-         ADXSignal = "Sell";
+         AroonSignal = "Sell";
       }
 
       // if(glSellPlaced == false){
       // 	PositionSignal = "Sell";
       // }
       // Open sell order
-      if (glSellPlaced == false && MASignal == "Sell" && RSISignal == "Sell" && TrendMASignal == "Sell" && ADXSignal == "Sell")
+      // if (glSellPlaced == false && MASignal == "Sell" && RSISignal == "Sell" && TrendMASignal == "Sell" && AroonSignal == "Sell")
+      // if (glSellPlaced == false && MASignal == "Sell" && AroonSignal == "Sell")
+      if (glSellPlaced == false && TrendMASignal == "Sell" && RSISignal == "Sell" && AroonSignal == "Sell")
       {
          // Close EA Buy Order
          if (PositionType() == POSITION_TYPE_BUY)
@@ -369,14 +373,14 @@ void OnTick()
    
    // Close odder when moving averages crossover again.
    if(CloseTradeOnSignalInverse==true){
-      if (PositionType() == POSITION_TYPE_BUY && (MASignal == "Sell" || RSISignal == "Sell"))
+      if (PositionType() == POSITION_TYPE_BUY && AroonSignal == "Sell")
       {
          MTrade.PositionClose(_Symbol);
-         Print("Buy Position closed by a Moving average crossover or RSI");
-      } else if (PositionType() == POSITION_TYPE_SELL && (MASignal == "Buy" || RSISignal == "Buy"))
+         Print("Buy Position closed by a AroonSignal Sell");
+      } else if (PositionType() == POSITION_TYPE_SELL && AroonSignal == "Buy")
       {
          MTrade.PositionClose(_Symbol);
-         Print("Sell Position closed by a Moving average crossover or RSI");
+         Print("Sell Position closed by a AroonSignal Buy");
       }
    }
 
@@ -405,7 +409,7 @@ void OnTick()
 
    // Comment("MATradeSignal : ", FastMA.Main(barShift+1),"| RSILevelSignalType : ",RSI.Main(barShift) , "| RSITradeSignal : ", RSISignal);
    // Chart Comment
-   CurrentSignal = "MASignal: " + MASignal + ", RSISignal: " + RSISignal + ", TrendMASignal: " + TrendMASignal + ", ADXSignal: " + ADXSignal;
+   CurrentSignal = "MASignal: " + MASignal + ", RSISignal: " + RSISignal + ", TrendMASignal: " + TrendMASignal + ", AroonSignal: " + AroonSignal;
    PositionInfo = "BuyPlaced: " + glBuyPlaced + ", SellPlaced: " + glSellPlaced;
    Comment(EAInfo + "\n" + AccountInfo + "\n" + MoneyManagementInfo + "\n" + TradingInfo + "\n" + FakeOutInfo + "\n" + CurrentSignal + "\n" + PositionInfo);
 }
